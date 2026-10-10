@@ -9,46 +9,38 @@ const client = new Client({
     ]
 });
 
+const DISCORD_TOKEN = process.env.TOKEN;
+const ROBLOX_COOKIE = process.env.COOKIE;
 const GROUP_ID = Number(process.env.GROUP_ID);
 
 async function startBot() {
-    await noblox.setCookie(process.env.COOKIE);
-    console.log("Roblox hesabına başarıyla giriş yapıldı!");
+    try {
+        if (!ROBLOX_COOKIE) {
+            console.error("HATA: COOKIE değişkeni bulunamadı!");
+            return;
+        }
+
+        console.log("Roblox oturumu açılıyor...");
+        const currentUser = await noblox.setCookie(ROBLOX_COOKIE);
+        console.log(`Roblox hesabına başarıyla giriş yapıldı! Kullanıcı: ${currentUser.UserName}`);
+
+        client.once('ready', () => {
+            console.log(`Discord botu aktif: ${client.user.tag}`);
+        });
+
+        client.on('messageCreate', async message => {
+            if (message.author.bot) return;
+
+            if (message.content.startsWith('!rütbever')) {
+                message.reply('Rütbe komutu alındı!');
+            }
+        });
+
+        await client.login(DISCORD_TOKEN);
+
+    } catch (error) {
+        console.error("Başlatma sırasında hata oluştu:", error);
+    }
 }
 
-client.on('ready', () => {
-    console.log(`Discord botu aktif: ${client.user.tag}`);
-});
-
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-
-    if (message.content.startsWith('!rolver')) {
-        const args = message.content.split(' ');
-        const username = args[1];
-        const roleInput = args.slice(2).join(' ');
-
-        if (!username || !roleInput) {
-            return message.reply('Kullanım: `!rolver <RobloxKullanıcıAdı> <RolAdı veya RankID>`');
-        }
-
-        try {
-            const userId = await noblox.getIdFromUsername(username);
-            
-            let rank;
-            if (!isNaN(roleInput)) {
-                rank = await noblox.setRank(GROUP_ID, userId, Number(roleInput));
-            } else {
-                rank = await noblox.setRole(GROUP_ID, userId, roleInput);
-            }
-
-            message.reply(`✅ **${username}** adlı oyuncunun Roblox grubundaki yeni rolü: **${rank.name}**`);
-        } catch (err) {
-            console.error(err);
-            message.reply(`❌ Bir hata oluştu: ${err.message}`);
-        }
-    }
-});
-
 startBot();
-client.login(process.env.TOKEN);
