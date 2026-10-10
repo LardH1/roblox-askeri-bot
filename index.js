@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const noblox = require('noblox.js');
+const axios = require('axios'); // Roblox API sorguları için
 
 const client = new Client({
     intents: [
@@ -10,37 +10,46 @@ const client = new Client({
 });
 
 const DISCORD_TOKEN = process.env.TOKEN;
-const ROBLOX_COOKIE = process.env.COOKIE;
 const GROUP_ID = Number(process.env.GROUP_ID);
 
-async function startBot() {
-    try {
-        if (!ROBLOX_COOKIE) {
-            console.error("HATA: COOKIE değişkeni bulunamadı!");
-            return;
+client.once('ready', () => {
+    console.log(`Discord botu aktif ve hazır: ${client.user.tag}`);
+});
+
+client.on('messageCreate', async message => {
+    if (message.author.bot) return;
+
+    // Örnek: Roblox Kullanıcı Bilgisi Sorgulama Komutu (!roblox <kullanıcıadı>)
+    if (message.content.startsWith('!roblox')) {
+        const args = message.content.split(' ');
+        const username = args[1];
+
+        if (!username) {
+            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!roblox KullaniciAdi`');
         }
 
-        console.log("Roblox oturumu açılıyor...");
-        const currentUser = await noblox.setCookie(ROBLOX_COOKIE);
-        console.log(`Roblox hesabına başarıyla giriş yapıldı! Kullanıcı: ${currentUser.UserName}`);
+        try {
+            // Roblox API üzerinden kullanıcı ID'sini bulma (Cookie istemez)
+            const userRes = await axios.post('https://users.roblox.com/v1/usernames/users', {
+                usernames: [username],
+                excludeBannedUsers: true
+            });
 
-        client.once('ready', () => {
-            console.log(`Discord botu aktif: ${client.user.tag}`);
-        });
-
-        client.on('messageCreate', async message => {
-            if (message.author.bot) return;
-
-            if (message.content.startsWith('!rütbever')) {
-                message.reply('Rütbe komutu alındı!');
+            if (userRes.data.data.length === 0) {
+                return message.reply('Bu isimde bir Roblox kullanıcısı bulunamadı.');
             }
-        });
 
-        await client.login(DISCORD_TOKEN);
+            const userData = userRes.data.data[0];
+            const userId = userData.id;
+            const displayName = userData.displayName;
 
-    } catch (error) {
-        console.error("Başlatma sırasında hata oluştu:", error);
+            message.reply(`Bulunan Kullanıcı:\n- **Kullanıcı Adı:** ${username}\n- **Görünen Ad:** ${displayName}\n- **ID:** ${userId}`);
+
+        } catch (error) {
+            console.error(error);
+            message.reply('Roblox API ile iletişim kurarken bir hata oluştu.');
+        }
     }
-}
+});
 
-startBot();
+client.login(DISCORD_TOKEN);
