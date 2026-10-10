@@ -1,12 +1,48 @@
-{
-  "name": "roblox-askeri-bot",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "discord.js": "^14.14.1",
-    "noblox.js": "^4.15.0"
-  }
+const { Client, GatewayIntentBits } = require('discord.js');
+const noblox = require('noblox.js');
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
+});
+
+const DISCORD_TOKEN = process.env.TOKEN;
+const ROBLOX_COOKIE = process.env.COOKIE;
+const GROUP_ID = Number(process.env.GROUP_ID);
+
+async function startBot() {
+    try {
+        if (!ROBLOX_COOKIE) {
+            console.error("HATA: COOKIE değişkeni bulunamadı!");
+            return;
+        }
+
+        console.log("Roblox oturumu açılıyor...");
+        const currentUser = await noblox.setCookie(ROBLOSECURITY);
+        console.log(`Roblox hesabına başarıyla giriş yapıldı! Kullanıcı: ${currentUser.UserName}`);
+
+        client.once('ready', () => {
+            console.log(`Discord botu aktif: ${client.user.tag}`);
+        });
+
+        client.on('messageCreate', async message => {
+            if (message.author.bot) return;
+
+            // Örnek komut yapısı
+            if (message.content.startsWith('!rütbever')) {
+                // Rütbe atlatma kodları buraya gelebilir
+                message.reply('Rütbe komutu alındı!');
+            }
+        });
+
+        await client.login(DISCORD_TOKEN);
+
+    } catch (error) {
+        console.error("Başlatma sırasında hata oluştu:", error);
+    }
 }
+
+startBot();
