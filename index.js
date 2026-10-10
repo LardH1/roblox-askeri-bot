@@ -1,4 +1,3 @@
-index.js
 const { Client, GatewayIntentBits } = require('discord.js');
 const noblox = require('noblox.js');
 
