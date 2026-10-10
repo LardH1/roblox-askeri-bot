@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const axios = require('axios'); // Roblox API sorguları için
+const axios = require('axios');
 
 const client = new Client({
     intents: [
@@ -19,7 +19,6 @@ client.once('ready', () => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // Örnek: Roblox Kullanıcı Bilgisi Sorgulama Komutu (!roblox <kullanıcıadı>)
     if (message.content.startsWith('!roblox')) {
         const args = message.content.split(' ');
         const username = args[1];
@@ -29,7 +28,6 @@ client.on('messageCreate', async message => {
         }
 
         try {
-            // Roblox API üzerinden kullanıcı ID'sini bulma (Cookie istemez)
             const userRes = await axios.post('https://users.roblox.com/v1/usernames/users', {
                 usernames: [username],
                 excludeBannedUsers: true
