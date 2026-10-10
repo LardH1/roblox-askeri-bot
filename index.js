@@ -1,5 +1,4 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const axios = require('axios');
 
 const client = new Client({
     intents: [
@@ -10,7 +9,6 @@ const client = new Client({
 });
 
 const DISCORD_TOKEN = process.env.TOKEN;
-const GROUP_ID = Number(process.env.GROUP_ID);
 
 client.once('ready', () => {
     console.log(`Discord botu aktif ve hazır: ${client.user.tag}`);
@@ -28,20 +26,26 @@ client.on('messageCreate', async message => {
         }
 
         try {
-            const userRes = await axios.post('https://users.roblox.com/v1/usernames/users', {
-                usernames: [username],
-                excludeBannedUsers: true
+            // Harici paket gerektirmeyen yerleşik fetch komutu
+            const response = await fetch('https://users.roblox.com/v1/usernames/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    usernames: [username],
+                    excludeBannedUsers: true
+                })
             });
 
-            if (userRes.data.data.length === 0) {
+            const data = await response.json();
+
+            if (!data.data || data.data.length === 0) {
                 return message.reply('Bu isimde bir Roblox kullanıcısı bulunamadı.');
             }
 
-            const userData = userRes.data.data[0];
-            const userId = userData.id;
-            const displayName = userData.displayName;
-
-            message.reply(`Bulunan Kullanıcı:\n- **Kullanıcı Adı:** ${username}\n- **Görünen Ad:** ${displayName}\n- **ID:** ${userId}`);
+            const userData = data.data[0];
+            message.reply(`Bulunan Kullanıcı:\n- **Kullanıcı Adı:** ${username}\n- **Görünen Ad:** ${userData.displayName}\n- **ID:** ${userData.id}`);
 
         } catch (error) {
             console.error(error);
