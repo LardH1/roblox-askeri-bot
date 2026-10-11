@@ -9,10 +9,7 @@ const client = new Client({
 });
 
 const DISCORD_TOKEN = process.env.TOKEN;
-
-// --- ROBLOX GRUP VE RÜTBE AYARLARI ---
-const GROUP_ID = "1107209279"; // Senin Roblox Grup ID'n
-const TARGET_RANK_ID = 1;      // Vermek istediğin rütbenin numarasını (Rank 0-255) buraya yazabilirsin!
+const GROUP_ID = "1107209279"; // Roblox Grup ID'n
 
 client.once('ready', () => {
     console.log(`Discord botu aktif ve hazır: ${client.user.tag}`);
@@ -21,13 +18,14 @@ client.once('ready', () => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // Kullanım: !rolver RobloxKullaniciAdi
+    // --- ROL VERME KOMUTU: !rolver KullaniciAdi RankNumarasi ---
     if (message.content.startsWith('!rolver')) {
         const args = message.content.split(' ');
         const username = args[1];
+        const rankId = args[2]; // Komutun yanına yazılan rütbe numarası (Örn: 3)
 
-        if (!username) {
-            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!rolver KullaniciAdi`');
+        if (!username || !rankId) {
+            return message.reply('Eksik kullanım! Örnek kullanım: `!rolver KullaniciAdi 3`');
         }
 
         try {
@@ -50,8 +48,44 @@ client.on('messageCreate', async message => {
             const userId = userDataJson.data[0].id;
             const displayName = userDataJson.data[0].displayName;
 
-            // 2. Adım: Bilgilendirme ve İşlem Onayı
-            message.reply(`🔍 **${displayName}** (@${username}, ID: ${userId}) başarıyla bulundu!\n🎖️ Hedef Grup ID: **${GROUP_ID}** | Hedef Rütbe Seviyesi: **${TARGET_RANK_ID}**\n\n*(Rütbeyi değiştirmek istersen kodun üst kısmındaki TARGET_RANK_ID değerini düzenleyebilirsin.)*`);
+            // 2. Adım: Bilgilendirme ve İşlem Özeti
+            message.reply(`✅ **${displayName}** (@${username}, ID: ${userId}) için işlem hazır!\n🎖️ Grup ID: **${GROUP_ID}** | Verilmek İstenen Rütbe (Rank): **${rankId}**`);
+
+        } catch (error) {
+            console.error(error);
+            message.reply('İşlem sırasında bir hata oluştu.');
+        }
+    }
+
+    // --- ROL SİLME / ALMA KOMUTU: !rolsil KullaniciAdi ---
+    if (message.content.startsWith('!rolsil')) {
+        const args = message.content.split(' ');
+        const username = args[1];
+
+        if (!username) {
+            return message.reply('Lütfen rütbesi alınacak kullanıcı adını girin! Örnek: `!rolsil KullaniciAdi`');
+        }
+
+        try {
+            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usernames: [username],
+                    excludeBannedUsers: true
+                })
+            });
+
+            const userDataJson = await userResponse.json();
+
+            if (!userDataJson.data || userDataJson.data.length === 0) {
+                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+            }
+
+            const userId = userDataJson.data[0].id;
+            const displayName = userDataJson.data[0].displayName;
+
+            message.reply(`🗑️ **${displayName}** (@${username}, ID: ${userId}) adlı kullanıcının rütbesini alma isteği hazırlandı!\n📌 Grup ID: **${GROUP_ID}**`);
 
         } catch (error) {
             console.error(error);
