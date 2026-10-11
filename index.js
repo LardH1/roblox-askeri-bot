@@ -82,7 +82,7 @@ client.on('messageCreate', async message => {
                     { name: '🛡️ Hedef Grup ID', value: `\`${GROUP_ID}\``, inline: true }
                 )
                 .setTimestamp()
-                .setFooter({ text: 'TTS Rütbe Sistemi', iconURL: client.user.displayAvatarURL() });
+                .setFooter({ text: 'NPC Tayfa', iconURL: client.user.displayAvatarURL() });
 
             return message.reply({ embeds: [embed] });
 
