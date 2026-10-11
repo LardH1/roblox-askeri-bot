@@ -18,29 +18,24 @@ client.once('ready', () => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // --- ROL VERME KOMUTU: !rolver KullaniciAdi RankNumarasi ---
+    // --- 1. ROL VERME: !rolver KullaniciAdi RankNumarasi ---
     if (message.content.startsWith('!rolver')) {
         const args = message.content.split(' ');
         const username = args[1];
-        const rankId = args[2]; // Komutun yanına yazılan rütbe numarası (Örn: 3)
+        const rankId = args[2];
 
         if (!username || !rankId) {
-            return message.reply('Eksik kullanım! Örnek kullanım: `!rolver KullaniciAdi 3`');
+            return message.reply('Eksik kullanım! Örnek: `!rolver KullaniciAdi 3`');
         }
 
         try {
-            // 1. Adım: Roblox Kullanıcı Adından ID Bulma
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    usernames: [username],
-                    excludeBannedUsers: true
-                })
+                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
             });
 
             const userDataJson = await userResponse.json();
-
             if (!userDataJson.data || userDataJson.data.length === 0) {
                 return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
             }
@@ -48,8 +43,7 @@ client.on('messageCreate', async message => {
             const userId = userDataJson.data[0].id;
             const displayName = userDataJson.data[0].displayName;
 
-            // 2. Adım: Bilgilendirme ve İşlem Özeti
-            message.reply(`✅ **${displayName}** (@${username}, ID: ${userId}) için işlem hazır!\n🎖️ Grup ID: **${GROUP_ID}** | Verilmek İstenen Rütbe (Rank): **${rankId}**`);
+            message.reply(`✅ **${displayName}** (@${username}, ID: ${userId}) için rütbe verme isteği hazırlandı!\n🎖️ Grup ID: **${GROUP_ID}** | Hedef Rütbe: **${rankId}**`);
 
         } catch (error) {
             console.error(error);
@@ -57,27 +51,23 @@ client.on('messageCreate', async message => {
         }
     }
 
-    // --- ROL SİLME / ALMA KOMUTU: !rolsil KullaniciAdi ---
+    // --- 2. ROL SİLME / ALMA: !rolsil KullaniciAdi ---
     if (message.content.startsWith('!rolsil')) {
         const args = message.content.split(' ');
         const username = args[1];
 
         if (!username) {
-            return message.reply('Lütfen rütbesi alınacak kullanıcı adını girin! Örnek: `!rolsil KullaniciAdi`');
+            return message.reply('Lütfen kullanıcı adını girin! Örnek: `!rolsil KullaniciAdi`');
         }
 
         try {
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    usernames: [username],
-                    excludeBannedUsers: true
-                })
+                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
             });
 
             const userDataJson = await userResponse.json();
-
             if (!userDataJson.data || userDataJson.data.length === 0) {
                 return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
             }
@@ -86,6 +76,38 @@ client.on('messageCreate', async message => {
             const displayName = userDataJson.data[0].displayName;
 
             message.reply(`🗑️ **${displayName}** (@${username}, ID: ${userId}) adlı kullanıcının rütbesini alma isteği hazırlandı!\n📌 Grup ID: **${GROUP_ID}**`);
+
+        } catch (error) {
+            console.error(error);
+            message.reply('İşlem sırasında bir hata oluştu.');
+        }
+    }
+
+    // --- 3. GRUPTAN ATMA: !gruptanat KullaniciAdi ---
+    if (message.content.startsWith('!gruptanat')) {
+        const args = message.content.split(' ');
+        const username = args[1];
+
+        if (!username) {
+            return message.reply('Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat KullaniciAdi`');
+        }
+
+        try {
+            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
+            });
+
+            const userDataJson = await userResponse.json();
+            if (!userDataJson.data || userDataJson.data.length === 0) {
+                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+            }
+
+            const userId = userDataJson.data[0].id;
+            const displayName = userDataJson.data[0].displayName;
+
+            message.reply(`🚫 **${displayName}** (@${username}, ID: ${userId}) adlı kullanıcının gruptan atılma işlemi hazırlandı!\n📌 Grup ID: **${GROUP_ID}**`);
 
         } catch (error) {
             console.error(error);
