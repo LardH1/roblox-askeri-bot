@@ -19,19 +19,21 @@ const client = new Client({
 });
 
 const DISCORD_TOKEN = process.env.TOKEN;
-const ROBLOX_COOKIE = process.env.ROBLOX_COOKIE ? process.env.ROBLOX_COOKIE.trim() : '';
+const RAW_COOKIE = process.env.ROBLOSECURITY || process.env.ROBLOX_COOKIE || '';
 const GROUP_ID = 1107209279;
 
 async function startRoblox() {
-    if (ROBLOX_COOKIE) {
+    if (RAW_COOKIE) {
         try {
-            const currentUser = await noblox.setCookie(ROBLOX_COOKIE);
+            // Çerezin başındaki fazlalıkları temizle (varsa)
+            const cleanCookie = RAW_COOKIE.trim();
+            const currentUser = await noblox.setCookie(cleanCookie);
             console.log(`Roblox hesabına giriş yapıldı: ${currentUser.UserName} (ID: ${currentUser.UserID})`);
         } catch (err) {
             console.error("Roblox Cookie giriş hatası:", err.message);
         }
     } else {
-        console.warn("UYARI: ROBLOX_COOKIE bulunamadı! Sadece okuma işlemleri yapılabilir.");
+        console.warn("UYARI: ROBLOSECURITY değişkeni bulunamadı!");
     }
 }
 
