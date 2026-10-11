@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const http = require('http');
 
 // Render port isteği için sunucu
@@ -35,13 +35,17 @@ client.on('messageCreate', async message => {
 
     if (!command) return;
 
-    // Sadece !roblox komutu çalışacak
     if (command === '!roblox') {
         if (!username) {
-            return message.reply('❌ Lütfen bir kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
+            const errorEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('⚠️ Eksik Komut Kullanımı')
+                .setDescription('Lütfen bir Roblox kullanıcı adı girin!\n\n**Örnek Kullanım:**\n`!roblox mertxerdem112`');
+            return message.reply({ embeds: [errorEmbed] });
         }
 
         try {
+            // 1. Kullanıcı ID ve Display Name çekme
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -50,16 +54,45 @@ client.on('messageCreate', async message => {
 
             const userData = await userResponse.json();
             if (!userData.data || userData.data.length === 0) {
-                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+                const notFoundEmbed = new EmbedBuilder()
+                    .setColor('#FFA500')
+                    .setTitle('❌ Kullanıcı Bulunamadı')
+                    .setDescription(`**${username}** adında aktif bir Roblox kullanıcısı bulunamadı.`);
+                return message.reply({ embeds: [notFoundEmbed] });
             }
 
             const userId = userData.data[0].id;
             const displayName = userData.data[0].displayName;
 
-            return message.reply(`🔍 **Kullanıcı Bilgisi:**\n* **Görünen Ad:** ${displayName}\n* **Kullanıcı Adı:** @${username}\n* **Roblox ID:** ${userId}\n* **Grup ID:** ${GROUP_ID}`);
+            // 2. Kullanıcının Avatar (Profil Resmi) URL'sini çekme
+            const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`);
+            const avatarData = await avatarResponse.json();
+            const avatarUrl = avatarData.data?.[0]?.imageUrl || 'https://www.roblox.com';
+
+            // 3. Şık ve Gösterişli Embed Tasarımı Oluşturma
+            const embed = new EmbedBuilder()
+                .setColor('#2B2D31') // Discord koyu tema şık gri/siyah tonu
+                .setTitle(`📌 Roblox Kullanıcı Profili`)
+                .setURL(`https://www.roblox.com/users/${userId}/profile`)
+                .setThumbnail(avatarUrl) // Profil fotoğrafını sağ üst köşeye koyar
+                .addFields(
+                    { name: '👤 Görünen Ad', value: `\`${displayName}\``, inline: true },
+                    { name: '🏷️ Kullanıcı Adı', value: `\`@${username}\``, inline: true },
+                    { name: '🆔 Roblox ID', value: `\`${userId}\``, inline: false },
+                    { name: '🛡️ Hedef Grup ID', value: `\`${GROUP_ID}\``, inline: true }
+                )
+                .setTimestamp()
+                .setFooter({ text: 'TTS Rütbe Sistemi', iconURL: client.user.displayAvatarURL() });
+
+            return message.reply({ embeds: [embed] });
+
         } catch (err) {
             console.error(err);
-            return message.reply('Kullanıcı bilgisi alınırken bir hata oluştu.');
+            const systemErrorEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('⚠️ Sistem Hatası')
+                .setDescription('Roblox API ile iletişim kurulurken bir hata oluştu.');
+            return message.reply({ embeds: [systemErrorEmbed] });
         }
     }
 });
