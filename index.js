@@ -10,46 +10,55 @@ const client = new Client({
 
 const DISCORD_TOKEN = process.env.TOKEN;
 
+// Roblox Grup Bilgileri (Bunları kendi grubuna göre dolduracaksın)
+const GROUP_ID = "GRUP_ID_BURAYA"; // Örn: "1234567"
+const RANK_ID = 2; // Vermek istediğin rütbenin ID'si veya değeri
+
 client.once('ready', () => {
     console.log(`Discord botu aktif ve hazır: ${client.user.tag}`);
 });
 
 client.on('messageCreate', async message => {
-    // Kendi attığı veya başka botların attığı mesajları yok say (Spam engelleme)
     if (message.author.bot) return;
 
-    if (message.content.startsWith('!roblox')) {
+    // Kullanım: !grupver KullaniciAdi
+    if (message.content.startsWith('!grupver')) {
         const args = message.content.split(' ');
         const username = args[1];
 
         if (!username) {
-            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!roblox KullaniciAdi`');
+            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!grupver KullaniciAdi`');
         }
 
         try {
-            const response = await fetch('https://users.roblox.com/v1/usernames/users', {
+            // 1. Adım: Roblox Kullanıcı Adından ID Bulma
+            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     usernames: [username],
                     excludeBannedUsers: true
                 })
             });
 
-            const data = await response.json();
+            const userDataJson = await userResponse.json();
 
-            if (!data.data || data.data.length === 0) {
-                return message.reply('Bu isimde bir Roblox kullanıcısı bulunamadı.');
+            if (!userDataJson.data || userDataJson.data.length === 0) {
+                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
             }
 
-            const userData = data.data[0];
-            message.reply(`Bulunan Kullanıcı:\n- **Kullanıcı Adı:** ${username}\n- **Görünen Ad:** ${userData.displayName}\n- **ID:** ${userData.id}`);
+            const userId = userDataJson.data[0].id;
+            const displayName = userDataJson.data[0].displayName;
+
+            // 2. Adım: Roblox Grup API ile Rütbe Verme / Değiştirme
+            // Not: Grup işlemleri için Roblox Open Cloud API Key gereklidir.
+            // Bu kısmı grubunun API anahtarı ve yetkileriyle bağlayacağız.
+
+            message.reply(`🔍 **${displayName}** (ID: ${userId}) bulundu!\n⏳ Roblox grubunda rütbe verme işlemi için Open Cloud API bağlantısı hazırlanıyor...`);
 
         } catch (error) {
             console.error(error);
-            message.reply('Roblox API ile iletişim kurarken bir hata oluştu.');
+            message.reply('İşlem sırasında bir hata oluştu.');
         }
     }
 });
