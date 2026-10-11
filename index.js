@@ -28,18 +28,17 @@ client.once('ready', () => {
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
-    if (!message.content.startsWith('!')) return;
+    
+    const content = message.content.trim();
+    const parts = content.split(/\s+/);
+    const command = parts[0]?.toLowerCase();
+    const username = parts[1];
 
-    const args = message.content.slice(1).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-    const username = args[0];
-
-    // Konsola hangi komutun geldiğini yazdıralım
-    console.log(`Çalıştırılan Komut: ${command}, Argüman: ${username}`);
+    if (!command) return;
 
     try {
         // 1. KULLANICI BİLGİ: !roblox KullaniciAdi
-        if (command === 'roblox') {
+        if (command === '!roblox') {
             if (!username) {
                 return message.reply('❌ Lütfen bir kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
             }
@@ -62,31 +61,31 @@ client.on('messageCreate', async message => {
         }
 
         // 2. RÜTBE VER: !rolver KullaniciAdi RankNumarasi
-        if (command === 'rolver') {
-            const rankId = args[1];
+        if (command === '!rolver') {
+            const rankId = parts[2];
             if (!username || !rankId) {
                 return message.reply('❌ Eksik kullanım! Örnek: `!rolver mertxerdem112 3`');
             }
 
-            return message.reply(`✅ **${username}** için **Rütbe: ${rankId}** verme isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
+            return message.reply(`✅ **${username}** kullanıcısı için **Rütbe: ${rankId}** verme isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
         }
 
         // 3. RÜTBE SİL: !rolsil KullaniciAdi
-        if (command === 'rolsil') {
+        if (command === '!rolsil') {
             if (!username) {
                 return message.reply('❌ Lütfen kullanıcı adını girin! Örnek: `!rolsil mertxerdem112`');
             }
 
-            return message.reply(`🗑️ **${username}** kullanıcısının rütbesini alma isteği hazırlandı!`);
+            return message.reply(`🗑️ **${username}** kullanıcısının rütbesini alma isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
         }
 
         // 4. GRUPTAN AT: !gruptanat KullaniciAdi
-        if (command === 'gruptanat') {
+        if (command === '!gruptanat') {
             if (!username) {
                 return message.reply('❌ Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat mertxerdem112`');
             }
 
-            return message.reply(`🚫 **${username}** kullanıcısını gruptan atma isteği hazırlandı!`);
+            return message.reply(`🚫 **${username}** kullanıcısını gruptan atma isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
         }
 
     } catch (err) {
