@@ -1,5 +1,18 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const http = require('http');
 
+// Render'ın "Web Service" port gereksinimini karşılamak için mini HTTP sunucusu
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Roblox Discord Botu aktif!\n');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`HTTP sunucusu ${PORT} portunda dinlemede.`);
+});
+
+// Discord Bot Başlangıcı
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -19,19 +32,19 @@ client.on('messageCreate', async message => {
 
     const msg = message.content.toLowerCase().trim();
 
-    if (msg.startsWith('!r-bilgi')) {
-        return message.reply('✅ Bilgi komutu çalışıyor!');
+    if (msg.startsWith('!roblox')) {
+        return message.reply('✅ Roblox komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!r-ver')) {
+    if (msg.startsWith('!rolver') || msg.startsWith('!r-ver')) {
         return message.reply('✅ Rütbe verme komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!r-sil')) {
+    if (msg.startsWith('!rolsil') || msg.startsWith('!r-sil')) {
         return message.reply('✅ Rütbe silme komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!r-at')) {
+    if (msg.startsWith('!gruptanat') || msg.startsWith('!r-at')) {
         return message.reply('✅ Gruptan atma komutu çalışıyor!');
     }
 });
