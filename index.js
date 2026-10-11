@@ -1,16 +1,17 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const http = require('http');
+const noblox = require('noblox.js');
 
+// Render Port Sunucusu
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot aktif\n');
+    res.end('Roblox Botu Aktif!\n');
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`HTTP sunucusu ${PORT} portunda.`);
-});
+server.listen(PORT, () => console.log(`HTTP sunucusu ${PORT} portunda.`));
 
+// Discord Client
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -20,15 +21,30 @@ const client = new Client({
 });
 
 const DISCORD_TOKEN = process.env.TOKEN;
-const GROUP_ID = "1107209279";
+const ROBLOX_COOKIE = process.env.ROBLOX_COOKIE; // Render Environment Variables kısmına eklenecek
+const GROUP_ID = 1107209279; // Grubunun ID'si (Sayısal olarak)
+
+async function startRoblox() {
+    if (ROBLOX_COOKIE) {
+        try {
+            const currentUser = await noblox.setCookie(ROBLOX_COOKIE);
+            console.log(`Roblox hesabına giriş yapıldı: ${currentUser.UserName} (ID: ${currentUser.UserID})`);
+        } catch (err) {
+            console.error("Roblox Cookie giriş hatası:", err.message);
+        }
+    } else {
+        console.warn("UYARI: ROBLOX_COOKIE çevresel değişkeni bulunamadı!");
+    }
+}
 
 client.once('ready', () => {
-    console.log(`Bot Discord'a bağlandı: ${client.user.tag}`);
+    console.log(`Discord Botu bağlandı: ${client.user.tag}`);
+    startRoblox();
 });
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
-    
+
     const content = message.content.trim();
     const parts = content.split(/\s+/);
     const command = parts[0]?.toLowerCase();
@@ -36,61 +52,44 @@ client.on('messageCreate', async message => {
 
     if (!command) return;
 
-    try {
-        // 1. KULLANICI BİLGİ: !roblox KullaniciAdi
-        if (command === '!roblox') {
-            if (!username) {
-                return message.reply('❌ Lütfen bir kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
-            }
+    // 1. KULLANICI BİLGİSİ: !roblox KullaniciAdi
+    if (command === '!roblox') {
+        if (!username) return message.reply('❌ Lütfen bir Roblox kullanıcı adı girin!');
+        try {
+            const id = await noblox.getIdFromUsername(username);
+            const rankName = await noblox.getRoleInGroup(GROUP_ID, id);
+            return message.reply(`🔍 **Kullanıcı:** ${username}\n🆔 **Roblox ID:** ${id}\n🎖️ **Gruptaki Rütbesi:** ${rankName}`);
+        } catch (err) {
+            return message.reply(`❌ Kullanıcı bulunamadı veya bir hata oluştu: ${err.message}`);
+        }
+    }
 
-            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
-            });
-
-            const userData = await userResponse.json();
-            if (!userData.data || userData.data.length === 0) {
-                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
-            }
-
-            const userId = userData.data[0].id;
-            const displayName = userData.data[0].displayName;
-
-            return message.reply(`🔍 **Kullanıcı Bilgisi:**\n* **Görünen Ad:** ${displayName}\n* **Kullanıcı Adı:** @${username}\n* **Roblox ID:** ${userId}`);
+    // 2. GERÇEK RÜTBE VERME: !rolver KullaniciAdi RankSira
+    if (command === '!rolver') {
+        const rank = parseInt(parts[2]);
+        if (!username || isNaN(rank)) {
+            return message.reply('❌ Doǧru kullanım: `!rolver KullaniciAdi RütbeNumarası` (Örn: `!rolver mertxerdem112 5`)');
         }
 
-        // 2. RÜTBE VER: !rolver KullaniciAdi RankNumarasi
-        if (command === '!rolver') {
-            const rankId = parts[2];
-            if (!username || !rankId) {
-                return message.reply('❌ Eksik kullanım! Örnek: `!rolver mertxerdem112 3`');
-            }
-
-            return message.reply(`✅ **${username}** kullanıcısı için **Rütbe: ${rankId}** verme isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
+        try {
+            const id = await noblox.getIdFromUsername(username);
+            const setRankRes = await noblox.setRank(GROUP_ID, id, rank);
+            return message.reply(`✅ **${username}** kullanıcısının rütbesi başarıyla **${setRankRes}** (Rütbe Seviyesi: ${rank}) olarak güncellendi!`);
+        } catch (err) {
+            return message.reply(`❌ Rütbe verilirken hata oluştu: ${err.message}`);
         }
+    }
 
-        // 3. RÜTBE SİL: !rolsil KullaniciAdi
-        if (command === '!rolsil') {
-            if (!username) {
-                return message.reply('❌ Lütfen kullanıcı adını girin! Örnek: `!rolsil mertxerdem112`');
-            }
-
-            return message.reply(`🗑️ **${username}** kullanıcısının rütbesini alma isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
+    // 3. GERÇEK GRUPTAN ATMA: !gruptanat KullaniciAdi
+    if (command === '!gruptanat') {
+        if (!username) return message.reply('❌ Lütfen bir kullanıcı adı girin!');
+        try {
+            const id = await noblox.getIdFromUsername(username);
+            await noblox.exile(GROUP_ID, id);
+            return message.reply(`🚫 **${username}** kullanıcısı gruptan başarıyla atıldı!`);
+        } catch (err) {
+            return message.reply(`❌ Gruptan atılırken hata oluştu: ${err.message}`);
         }
-
-        // 4. GRUPTAN AT: !gruptanat KullaniciAdi
-        if (command === '!gruptanat') {
-            if (!username) {
-                return message.reply('❌ Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat mertxerdem112`');
-            }
-
-            return message.reply(`🚫 **${username}** kullanıcısını gruptan atma isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
-        }
-
-    } catch (err) {
-        console.error("Komut işlenirken hata oluştu:", err);
-        return message.reply(`⚠️ Bir hata oluştu: ${err.message}`);
     }
 });
 
