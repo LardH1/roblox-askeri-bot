@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const http = require('http');
 
 // Render port isteği için sunucu
@@ -45,7 +45,7 @@ client.on('messageCreate', async message => {
         }
 
         try {
-            // 1. Kullanıcı ID ve Display Name çekme
+            // 1. Kullanıcı ID, Display Name ve Kayıt Tarihi Çekme
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -64,6 +64,11 @@ client.on('messageCreate', async message => {
             const userId = userData.data[0].id;
             const displayName = userData.data[0].displayName;
 
+            // Detaylı profil bilgisi (Kayıt tarihi için)
+            const profileResponse = await fetch(`https://users.roblox.com/v1/users/${userId}`);
+            const profileData = await profileResponse.json();
+            const createdDate = profileData.created ? new Date(profileData.created).toLocaleDateString('tr-TR') : 'Bilinmiyor';
+
             // 2. Kullanıcının Avatar (Profil Resmi) URL'sini çekme
             const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`);
             const avatarData = await avatarResponse.json();
@@ -79,22 +84,24 @@ client.on('messageCreate', async message => {
             const presence = presenceData.userPresences?.[0];
 
             let statusText = '🔴 Çevrimdışı (Offline)';
-            let embedColor = '#FF0000'; // Kırmızı
+            let embedColor = '#FF0000'; // Çevrimdışıyken Kırmızı
+            let currentGamePlaceId = null;
 
             if (presence) {
                 if (presence.userPresenceType === 1) {
                     statusText = '🟢 Çevrimiçi (Website)';
-                    embedColor = '#00FF00'; // Yeşil
+                    embedColor = '#00FF00'; // Aktifken Yeşil
                 } else if (presence.userPresenceType === 2) {
                     statusText = `🎮 Oyunda: **${presence.lastLocation || 'Bilinmeyen Oyun'}**`;
-                    embedColor = '#0099FF'; // Mavi
+                    embedColor = '#00FF00'; // Oyundayken Yeşil
+                    currentGamePlaceId = presence.placeId; // Oynadığı oyunun Place ID'si
                 } else if (presence.userPresenceType === 3) {
                     statusText = `💻 Stüdyoda (Roblox Studio)`;
-                    embedColor = '#FFA500'; // Turuncu
+                    embedColor = '#00FF00'; // Stüdyodayken Yeşil
                 }
             }
 
-            // 4. Şık ve Gösterişli Embed Tasarımı Oluşturma
+            // 4. Embed Tasarımı
             const embed = new EmbedBuilder()
                 .setColor(embedColor)
                 .setTitle(`📌 Roblox Kullanıcı Profili`)
@@ -104,13 +111,38 @@ client.on('messageCreate', async message => {
                     { name: '👤 Görünen Ad', value: `\`${displayName}\``, inline: true },
                     { name: '🏷️ Kullanıcı Adı', value: `\`@${username}\``, inline: true },
                     { name: '🌐 Anlık Durum', value: statusText, inline: false },
+                    { name: '📅 Kayıt Tarihi', value: `\`${createdDate}\``, inline: true },
                     { name: '🆔 Roblox ID', value: `\`${userId}\``, inline: true },
-                    { name: '🛡️ Hedef Grup ID', value: `\`${GROUP_ID}\``, inline: true }
+                    { name: '🛡️ Hedef Grup ID', value: `\`${GROUP_ID}\``, inline: false }
                 )
                 .setTimestamp()
                 .setFooter({ text: 'NPC Tayfa', iconURL: client.user.displayAvatarURL() });
 
-            return message.reply({ embeds: [embed] });
+            // 5. Tıklanabilir Link Butonları Oluşturma
+            const components = [];
+            const row = new ActionRowBuilder();
+
+            // Profil Butonu
+            row.addComponents(
+                new ButtonBuilder()
+                    .setLabel('Roblox Profiline Git')
+                    .setStyle(ButtonStyle.Link)
+                    .setURL(`https://www.roblox.com/users/${userId}/profile`)
+            );
+
+            // Eğer kişide oyun bilgisi varsa "Oyuna Katıl / Aç" Butonu Ekle
+            if (currentGamePlaceId) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setLabel('🎮 Oynadığı Oyuna Git')
+                        .setStyle(ButtonStyle.Link)
+                        .setURL(`https://www.roblox.com/games/${currentGamePlaceId}`)
+                );
+            }
+
+            components.push(row);
+
+            return message.reply({ embeds: [embed], components: components });
 
         } catch (err) {
             console.error(err);
