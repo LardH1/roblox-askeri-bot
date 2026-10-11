@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const http = require('http');
 
 // Render port isteği için sunucu
@@ -21,28 +21,43 @@ const client = new Client({
 const DISCORD_TOKEN = process.env.TOKEN;
 const GROUP_ID = "1107209279";
 
-client.once('ready', () => {
+// Slash Komut Tanımı
+const commands = [
+    new SlashCommandBuilder()
+        .setName('roblox')
+        .setDescription('Roblox kullanıcı profilini ve oyun durumunu sorgular.')
+        .addStringOption(option =>
+            option.setName('kullanici_adi')
+                .setDescription('Sorgulanacak Roblox kullanıcı adı')
+                .setRequired(true))
+        .toJSON()
+];
+
+client.once('ready', async () => {
     console.log(`Discord Botu bağlandı: ${client.user.tag}`);
+
+    // Slash komutlarını Discord API'ye kaydetme
+    const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
+    try {
+        console.log('Slash komutları kaydediliyor...');
+        await rest.put(
+            Routes.applicationCommands(client.user.id),
+            { body: commands }
+        );
+        console.log('Slash komutları başarıyla yüklendi!');
+    } catch (error) {
+        console.error('Komut yükleme hatası:', error);
+    }
 });
 
-client.on('messageCreate', async message => {
-    if (message.author.bot) return;
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
 
-    const content = message.content.trim();
-    const parts = content.split(/\s+/);
-    const command = parts[0]?.toLowerCase();
-    const username = parts[1];
+    if (interaction.commandName === 'roblox') {
+        const username = interaction.options.getString('kullanici_adi');
 
-    if (!command) return;
-
-    if (command === '!roblox') {
-        if (!username) {
-            const errorEmbed = new EmbedBuilder()
-                .setColor('#FF0000')
-                .setTitle('⚠️ Eksik Komut Kullanımı')
-                .setDescription('Lütfen bir Roblox kullanıcı adı girin!\n\n**Örnek Kullanım:**\n`!roblox mertxerdem112`');
-            return message.reply({ embeds: [errorEmbed] });
-        }
+        // Kullanıcıya yükleniyor yanıtı ver
+        await interaction.deferReply();
 
         try {
             // 1. Kullanıcı ID, Display Name ve Kayıt Tarihi Çekme
@@ -58,7 +73,7 @@ client.on('messageCreate', async message => {
                     .setColor('#FFA500')
                     .setTitle('❌ Kullanıcı Bulunamadı')
                     .setDescription(`**${username}** adında aktif bir Roblox kullanıcısı bulunamadı.`);
-                return message.reply({ embeds: [notFoundEmbed] });
+                return interaction.editReply({ embeds: [notFoundEmbed] });
             }
 
             const userId = userData.data[0].id;
@@ -84,20 +99,20 @@ client.on('messageCreate', async message => {
             const presence = presenceData.userPresences?.[0];
 
             let statusText = '🔴 Çevrimdışı (Offline)';
-            let embedColor = '#FF0000'; // Çevrimdışıyken Kırmızı
+            let embedColor = '#FF0000';
             let currentGamePlaceId = null;
 
             if (presence) {
                 if (presence.userPresenceType === 1) {
                     statusText = '🟢 Çevrimiçi (Website)';
-                    embedColor = '#00FF00'; // Aktifken Yeşil
+                    embedColor = '#00FF00';
                 } else if (presence.userPresenceType === 2) {
                     statusText = `🎮 Oyunda: **${presence.lastLocation || 'Bilinmeyen Oyun'}**`;
-                    embedColor = '#00FF00'; // Oyundayken Yeşil
-                    currentGamePlaceId = presence.placeId; // Oynadığı oyunun Place ID'si
+                    embedColor = '#00FF00';
+                    currentGamePlaceId = presence.placeId;
                 } else if (presence.userPresenceType === 3) {
                     statusText = `💻 Stüdyoda (Roblox Studio)`;
-                    embedColor = '#00FF00'; // Stüdyodayken Yeşil
+                    embedColor = '#00FF00';
                 }
             }
 
@@ -118,19 +133,14 @@ client.on('messageCreate', async message => {
                 .setTimestamp()
                 .setFooter({ text: 'NPC Tayfa', iconURL: client.user.displayAvatarURL() });
 
-            // 5. Tıklanabilir Link Butonları Oluşturma
-            const components = [];
-            const row = new ActionRowBuilder();
-
-            // Profil Butonu
-            row.addComponents(
+            // 5. Butonlar
+            const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setLabel('Roblox Profiline Git')
                     .setStyle(ButtonStyle.Link)
                     .setURL(`https://www.roblox.com/users/${userId}/profile`)
             );
 
-            // Eğer kişide oyun bilgisi varsa "Oyuna Katıl / Aç" Butonu Ekle
             if (currentGamePlaceId) {
                 row.addComponents(
                     new ButtonBuilder()
@@ -140,9 +150,7 @@ client.on('messageCreate', async message => {
                 );
             }
 
-            components.push(row);
-
-            return message.reply({ embeds: [embed], components: components });
+            return interaction.editReply({ embeds: [embed], components: [row] });
 
         } catch (err) {
             console.error(err);
@@ -150,7 +158,7 @@ client.on('messageCreate', async message => {
                 .setColor('#FF0000')
                 .setTitle('⚠️ Sistem Hatası')
                 .setDescription('Roblox API ile iletişim kurulurken bir hata oluştu.');
-            return message.reply({ embeds: [systemErrorEmbed] });
+            return interaction.editReply({ embeds: [systemErrorEmbed] });
         }
     }
 });
