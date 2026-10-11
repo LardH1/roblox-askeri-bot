@@ -34,13 +34,16 @@ client.on('messageCreate', async message => {
     const command = args.shift().toLowerCase();
     const username = args[0];
 
-    // 1. KULLANICI BİLGİ: !roblox KullaniciAdi
-    if (command === 'roblox') {
-        if (!username) {
-            return message.reply('❌ Lütfen bir kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
-        }
+    // Konsola hangi komutun geldiğini yazdıralım
+    console.log(`Çalıştırılan Komut: ${command}, Argüman: ${username}`);
 
-        try {
+    try {
+        // 1. KULLANICI BİLGİ: !roblox KullaniciAdi
+        if (command === 'roblox') {
+            if (!username) {
+                return message.reply('❌ Lütfen bir kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
+            }
+
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -56,95 +59,39 @@ client.on('messageCreate', async message => {
             const displayName = userData.data[0].displayName;
 
             return message.reply(`🔍 **Kullanıcı Bilgisi:**\n* **Görünen Ad:** ${displayName}\n* **Kullanıcı Adı:** @${username}\n* **Roblox ID:** ${userId}`);
-        } catch (err) {
-            console.error(err);
-            return message.reply('Kullanıcı bilgisi alınırken bir hata oluştu.');
-        }
-    }
-
-    // 2. RÜTBE VER: !rolver KullaniciAdi RankNumarasi
-    if (command === 'rolver') {
-        const rankId = args[1];
-        if (!username || !rankId) {
-            return message.reply('❌ Eksik kullanım! Örnek: `!rolver mertxerdem112 3`');
         }
 
-        try {
-            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
-            });
-
-            const userData = await userResponse.json();
-            if (!userData.data || userData.data.length === 0) {
-                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+        // 2. RÜTBE VER: !rolver KullaniciAdi RankNumarasi
+        if (command === 'rolver') {
+            const rankId = args[1];
+            if (!username || !rankId) {
+                return message.reply('❌ Eksik kullanım! Örnek: `!rolver mertxerdem112 3`');
             }
 
-            const userId = userData.data[0].id;
-            const displayName = userData.data[0].displayName;
-
-            return message.reply(`✅ **${displayName}** (@${username}, ID: ${userId}) için **Rütbe: ${rankId}** verme isteği hazırlandı!\n🎖️ Grup ID: **${GROUP_ID}**`);
-        } catch (err) {
-            console.error(err);
-            return message.reply('İşlem sırasında bir hata oluştu.');
-        }
-    }
-
-    // 3. RÜTBE SİL: !rolsil KullaniciAdi
-    if (command === 'rolsil') {
-        if (!username) {
-            return message.reply('❌ Lütfen kullanıcı adını girin! Örnek: `!rolsil mertxerdem112`');
+            return message.reply(`✅ **${username}** için **Rütbe: ${rankId}** verme isteği hazırlandı! (Grup ID: ${GROUP_ID})`);
         }
 
-        try {
-            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
-            });
-
-            const userData = await userResponse.json();
-            if (!userData.data || userData.data.length === 0) {
-                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+        // 3. RÜTBE SİL: !rolsil KullaniciAdi
+        if (command === 'rolsil') {
+            if (!username) {
+                return message.reply('❌ Lütfen kullanıcı adını girin! Örnek: `!rolsil mertxerdem112`');
             }
 
-            const userId = userData.data[0].id;
-            const displayName = userData.data[0].displayName;
-
-            return message.reply(`🗑️ **${displayName}** (@${username}, ID: ${userId}) kullanıcısının rütbesini alma isteği hazırlandı!\n📌 Grup ID: **${GROUP_ID}**`);
-        } catch (err) {
-            console.error(err);
-            return message.reply('İşlem sırasında bir hata oluştu.');
-        }
-    }
-
-    // 4. GRUPTAN AT: !gruptanat KullaniciAdi
-    if (command === 'gruptanat') {
-        if (!username) {
-            return message.reply('❌ Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat mertxerdem112`');
+            return message.reply(`🗑️ **${username}** kullanıcısının rütbesini alma isteği hazırlandı!`);
         }
 
-        try {
-            const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usernames: [username], excludeBannedUsers: true })
-            });
-
-            const userData = await userResponse.json();
-            if (!userData.data || userData.data.length === 0) {
-                return message.reply('❌ Bu isimde bir Roblox kullanıcısı bulunamadı.');
+        // 4. GRUPTAN AT: !gruptanat KullaniciAdi
+        if (command === 'gruptanat') {
+            if (!username) {
+                return message.reply('❌ Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat mertxerdem112`');
             }
 
-            const userId = userData.data[0].id;
-            const displayName = userData.data[0].displayName;
-
-            return message.reply(`🚫 **${displayName}** (@${username}, ID: ${userId}) kullanıcısını gruptan atma isteği hazırlandı!\n📌 Grup ID: **${GROUP_ID}**`);
-        } catch (err) {
-            console.error(err);
-            return message.reply('İşlem sırasında bir hata oluştu.');
+            return message.reply(`🚫 **${username}** kullanıcısını gruptan atma isteği hazırlandı!`);
         }
+
+    } catch (err) {
+        console.error("Komut işlenirken hata oluştu:", err);
+        return message.reply(`⚠️ Bir hata oluştu: ${err.message}`);
     }
 });
 
