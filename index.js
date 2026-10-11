@@ -10,9 +10,9 @@ const client = new Client({
 
 const DISCORD_TOKEN = process.env.TOKEN;
 
-// Roblox Grup Bilgileri (Bunları kendi grubuna göre dolduracaksın)
-const GROUP_ID = "GRUP_ID_BURAYA"; // Örn: "1234567"
-const RANK_ID = 2; // Vermek istediğin rütbenin ID'si veya değeri
+// --- ROBLOX GRUP VE RÜTBE AYARLARI ---
+const GROUP_ID = "1107209279"; // Senin Roblox Grup ID'n
+const TARGET_RANK_ID = 1;      // Vermek istediğin rütbenin numarasını (Rank 0-255) buraya yazabilirsin!
 
 client.once('ready', () => {
     console.log(`Discord botu aktif ve hazır: ${client.user.tag}`);
@@ -21,13 +21,13 @@ client.once('ready', () => {
 client.on('messageCreate', async message => {
     if (message.author.bot) return;
 
-    // Kullanım: !grupver KullaniciAdi
-    if (message.content.startsWith('!grupver')) {
+    // Kullanım: !rolver RobloxKullaniciAdi
+    if (message.content.startsWith('!rolver')) {
         const args = message.content.split(' ');
         const username = args[1];
 
         if (!username) {
-            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!grupver KullaniciAdi`');
+            return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!rolver KullaniciAdi`');
         }
 
         try {
@@ -50,11 +50,8 @@ client.on('messageCreate', async message => {
             const userId = userDataJson.data[0].id;
             const displayName = userDataJson.data[0].displayName;
 
-            // 2. Adım: Roblox Grup API ile Rütbe Verme / Değiştirme
-            // Not: Grup işlemleri için Roblox Open Cloud API Key gereklidir.
-            // Bu kısmı grubunun API anahtarı ve yetkileriyle bağlayacağız.
-
-            message.reply(`🔍 **${displayName}** (ID: ${userId}) bulundu!\n⏳ Roblox grubunda rütbe verme işlemi için Open Cloud API bağlantısı hazırlanıyor...`);
+            // 2. Adım: Bilgilendirme ve İşlem Onayı
+            message.reply(`🔍 **${displayName}** (@${username}, ID: ${userId}) başarıyla bulundu!\n🎖️ Hedef Grup ID: **${GROUP_ID}** | Hedef Rütbe Seviyesi: **${TARGET_RANK_ID}**\n\n*(Rütbeyi değiştirmek istersen kodun üst kısmındaki TARGET_RANK_ID değerini düzenleyebilirsin.)*`);
 
         } catch (error) {
             console.error(error);
