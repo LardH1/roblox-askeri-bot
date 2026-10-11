@@ -19,20 +19,20 @@ client.on('messageCreate', async message => {
 
     const msg = message.content.toLowerCase().trim();
 
-    if (msg.startsWith('!roblox')) {
-        return message.reply('✅ Roblox komutu çalışıyor!');
+    if (msg.startsWith('!r-bilgi')) {
+        return message.reply('✅ Bilgi komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!rolver')) {
-        return message.reply('✅ Rolver komutu çalışıyor!');
+    if (msg.startsWith('!r-ver')) {
+        return message.reply('✅ Rütbe verme komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!rolsil')) {
-        return message.reply('✅ Rolsil komutu çalışıyor!');
+    if (msg.startsWith('!r-sil')) {
+        return message.reply('✅ Rütbe silme komutu çalışıyor!');
     }
 
-    if (msg.startsWith('!gruptanat')) {
-        return message.reply('✅ Gruptanat komutu çalışıyor!');
+    if (msg.startsWith('!r-at')) {
+        return message.reply('✅ Gruptan atma komutu çalışıyor!');
     }
 });
 
