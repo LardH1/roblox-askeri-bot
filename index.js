@@ -69,16 +69,42 @@ client.on('messageCreate', async message => {
             const avatarData = await avatarResponse.json();
             const avatarUrl = avatarData.data?.[0]?.imageUrl || 'https://www.roblox.com';
 
-            // 3. Şık ve Gösterişli Embed Tasarımı Oluşturma
+            // 3. Kullanıcının Durumunu (Online / Oyun Bilgisi) Çekme
+            const presenceResponse = await fetch('https://presence.roblox.com/v1/presence/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userIds: [userId] })
+            });
+            const presenceData = await presenceResponse.json();
+            const presence = presenceData.userPresences?.[0];
+
+            let statusText = '🔴 Çevrimdışı (Offline)';
+            let embedColor = '#FF0000'; // Kırmızı
+
+            if (presence) {
+                if (presence.userPresenceType === 1) {
+                    statusText = '🟢 Çevrimiçi (Website)';
+                    embedColor = '#00FF00'; // Yeşil
+                } else if (presence.userPresenceType === 2) {
+                    statusText = `🎮 Oyunda: **${presence.lastLocation || 'Bilinmeyen Oyun'}**`;
+                    embedColor = '#0099FF'; // Mavi
+                } else if (presence.userPresenceType === 3) {
+                    statusText = `💻 Stüdyoda (Roblox Studio)`;
+                    embedColor = '#FFA500'; // Turuncu
+                }
+            }
+
+            // 4. Şık ve Gösterişli Embed Tasarımı Oluşturma
             const embed = new EmbedBuilder()
-                .setColor('#2B2D31') // Discord koyu tema şık gri/siyah tonu
+                .setColor(embedColor)
                 .setTitle(`📌 Roblox Kullanıcı Profili`)
                 .setURL(`https://www.roblox.com/users/${userId}/profile`)
-                .setThumbnail(avatarUrl) // Profil fotoğrafını sağ üst köşeye koyar
+                .setThumbnail(avatarUrl)
                 .addFields(
                     { name: '👤 Görünen Ad', value: `\`${displayName}\``, inline: true },
                     { name: '🏷️ Kullanıcı Adı', value: `\`@${username}\``, inline: true },
-                    { name: '🆔 Roblox ID', value: `\`${userId}\``, inline: false },
+                    { name: '🌐 Anlık Durum', value: statusText, inline: false },
+                    { name: '🆔 Roblox ID', value: `\`${userId}\``, inline: true },
                     { name: '🛡️ Hedef Grup ID', value: `\`${GROUP_ID}\``, inline: true }
                 )
                 .setTimestamp()
