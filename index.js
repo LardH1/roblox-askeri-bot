@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const http = require('http');
 
-// Render port isteği için sunucu
+// Render port isteği için HTTP sunucusu
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Roblox Botu Aktif!\n');
@@ -21,7 +21,7 @@ const client = new Client({
 const DISCORD_TOKEN = process.env.TOKEN;
 const GROUP_ID = "1107209279";
 
-// Slash Komut Tanımı
+// Slash Komut Tanımı (DM ve Grup Sohbeti Yetkileri Dahil)
 const commands = [
     new SlashCommandBuilder()
         .setName('roblox')
@@ -30,13 +30,17 @@ const commands = [
             option.setName('kullanici_adi')
                 .setDescription('Sorgulanacak Roblox kullanıcı adı')
                 .setRequired(true))
+        // Komutun hem Sunucularda (0) hem de Kullanıcı Hesabında (1) çalışmasını sağlar
+        .setIntegrationTypes([0, 1])
+        // Komutun Sunucu (0), Direkt Mesaj (1) ve Grup DM (2) ortamlarında görünmesini sağlar
+        .setContexts([0, 1, 2])
         .toJSON()
 ];
 
 client.once('ready', async () => {
     console.log(`Discord Botu bağlandı: ${client.user.tag}`);
 
-    // Slash komutlarını Discord API'ye kaydetme
+    // Slash komutlarını Discord API'ye global olarak kaydetme
     const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     try {
         console.log('Slash komutları kaydediliyor...');
@@ -44,7 +48,7 @@ client.once('ready', async () => {
             Routes.applicationCommands(client.user.id),
             { body: commands }
         );
-        console.log('Slash komutları başarıyla yüklendi!');
+        console.log('Slash komutları grup sohbetleri ve DM izinleriyle yüklendi!');
     } catch (error) {
         console.error('Komut yükleme hatası:', error);
     }
@@ -56,11 +60,10 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'roblox') {
         const username = interaction.options.getString('kullanici_adi');
 
-        // Kullanıcıya yükleniyor yanıtı ver
         await interaction.deferReply();
 
         try {
-            // 1. Kullanıcı ID, Display Name ve Kayıt Tarihi Çekme
+            // 1. Kullanıcı ID, Display Name ve Kayıt Tarihi
             const userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -79,17 +82,16 @@ client.on('interactionCreate', async interaction => {
             const userId = userData.data[0].id;
             const displayName = userData.data[0].displayName;
 
-            // Detaylı profil bilgisi (Kayıt tarihi için)
             const profileResponse = await fetch(`https://users.roblox.com/v1/users/${userId}`);
             const profileData = await profileResponse.json();
             const createdDate = profileData.created ? new Date(profileData.created).toLocaleDateString('tr-TR') : 'Bilinmiyor';
 
-            // 2. Kullanıcının Avatar (Profil Resmi) URL'sini çekme
+            // 2. Avatar Görseli
             const avatarResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`);
             const avatarData = await avatarResponse.json();
             const avatarUrl = avatarData.data?.[0]?.imageUrl || 'https://www.roblox.com';
 
-            // 3. Kullanıcının Durumunu (Online / Oyun Bilgisi) Çekme
+            // 3. Oyun/Durum Bilgisi
             const presenceResponse = await fetch('https://presence.roblox.com/v1/presence/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -116,7 +118,7 @@ client.on('interactionCreate', async interaction => {
                 }
             }
 
-            // 4. Embed Tasarımı
+            // 4. Embed Mesajı
             const embed = new EmbedBuilder()
                 .setColor(embedColor)
                 .setTitle(`📌 Roblox Kullanıcı Profili`)
