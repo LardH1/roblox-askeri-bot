@@ -15,6 +15,7 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async message => {
+    // Kendi attığı veya başka botların attığı mesajları yok say (Spam engelleme)
     if (message.author.bot) return;
 
     if (message.content.startsWith('!roblox')) {
@@ -26,7 +27,6 @@ client.on('messageCreate', async message => {
         }
 
         try {
-            // Harici paket gerektirmeyen yerleşik fetch komutu
             const response = await fetch('https://users.roblox.com/v1/usernames/users', {
                 method: 'POST',
                 headers: {
