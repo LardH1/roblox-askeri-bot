@@ -16,18 +16,15 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async message => {
-    // Botun kendi mesajlarını ve diğer botları yoksay
     if (message.author.bot) return;
-
-    // Sadece '!' ile başlayan mesajlarla ilgilen
     if (!message.content.startsWith('!')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
     const command = args.shift().toLowerCase();
-    const username = args[0];
 
-    // --- 1. ROBLOX BİLGİ / KONTROL: !roblox KullaniciAdi ---
+    // --- 1. ROBLOX BİLGİ: !roblox KullaniciAdi ---
     if (command === 'roblox') {
+        const username = args[0];
         if (!username) {
             return message.reply('Lütfen bir Roblox kullanıcı adı girin! Örnek: `!roblox mertxerdem112`');
         }
@@ -57,10 +54,11 @@ client.on('messageCreate', async message => {
 
     // --- 2. ROL VERME: !rolver KullaniciAdi RankNumarasi ---
     if (command === 'rolver') {
+        const username = args[0];
         const rankId = args[1];
 
         if (!username || !rankId) {
-            return message.reply('Eksik kullanım! Örnek: `!rolver KullaniciAdi 3`');
+            return message.reply('Eksik kullanım! Örnek: `!rolver mertxerdem112 3`');
         }
 
         try {
@@ -88,8 +86,9 @@ client.on('messageCreate', async message => {
 
     // --- 3. ROL SİLME / ALMA: !rolsil KullaniciAdi ---
     if (command === 'rolsil') {
+        const username = args[0];
         if (!username) {
-            return message.reply('Lütfen kullanıcı adını girin! Örnek: `!rolsil KullaniciAdi`');
+            return message.reply('Lütfen kullanıcı adını girin! Örnek: `!rolsil mertxerdem112`');
         }
 
         try {
@@ -117,8 +116,9 @@ client.on('messageCreate', async message => {
 
     // --- 4. GRUPTAN ATMA: !gruptanat KullaniciAdi ---
     if (command === 'gruptanat') {
+        const username = args[0];
         if (!username) {
-            return message.reply('Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat KullaniciAdi`');
+            return message.reply('Lütfen gruptan atılacak kullanıcı adını girin! Örnek: `!gruptanat mertxerdem112`');
         }
 
         try {
